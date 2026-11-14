@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Story Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--main:#16406b;--accent:#3d8fc6;--soft:#eef4fa;--card:#fff;--vocab:#c2412d;--ink:#1c2733;--tint:#dce8f4;--ok:#1f7a3a;--warn:#b5651d}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--soft);color:var(--ink);font-family:Poppins,Arial,sans-serif;min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+.top{position:sticky;top:0;z-index:5;background:var(--main);color:#fff;display:flex;align-items:center;gap:14px;padding:10px 18px}
+.top h1{font-family:Fredoka,Poppins,sans-serif;font-size:20px;margin:0;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .who{font-size:13px;opacity:.9}
+.bar{height:6px;background:rgba(255,255,255,.25)}
+.bar>div{height:100%;background:var(--accent);transition:width .4s}
+.wrap{max-width:1180px;margin:0 auto;padding:18px 16px 110px}
+.book{perspective:1600px}
+.page{background:var(--card);border-radius:18px;box-shadow:0 6px 0 var(--tint),0 10px 30px rgba(0,0,0,.08);padding:22px;transform-origin:left center}
+.flip-next{animation:flipNext .45s ease}
+.flip-prev{animation:flipPrev .45s ease}
+@keyframes flipNext{from{transform:rotateY(-70deg);opacity:.2}to{transform:rotateY(0);opacity:1}}
+@keyframes flipPrev{from{transform:rotateY(70deg);opacity:.2}to{transform:rotateY(0);opacity:1}}
+@media (prefers-reduced-motion:reduce){.flip-next,.flip-prev{animation:none}}
+.grid{display:grid;grid-template-columns:1.15fr 1fr;gap:24px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.chip{display:inline-block;background:var(--accent);color:#fff;border-radius:99px;padding:3px 12px;font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase}
+.pnum{font-family:Fredoka,sans-serif;color:var(--main);font-weight:600;font-size:15px;margin-left:8px}
+.art{border-radius:14px;overflow:hidden;border:3px solid var(--main);margin:12px 0 14px;line-height:0}
+.art{background:var(--tint)}.art svg{width:100%;height:auto;max-height:38vh;display:block}
+.story p{margin:0 0 .85em}
+.g3 .story{font-size:21px;line-height:1.65}
+.g4 .story{font-size:18px;line-height:1.65}
+.vw{color:var(--vocab);font-weight:700;background:none;border:none;padding:0;font-size:inherit;border-bottom:2px dotted var(--vocab)}
+.tip{position:fixed;z-index:20;max-width:300px;background:#fff;border:2px solid var(--vocab);border-radius:12px;padding:10px 12px;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.tip b{color:var(--vocab)}
+.listen{background:var(--tint);border:none;border-radius:99px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--main);margin-left:8px}
+.qpanel{background:var(--soft);border:2px dashed var(--accent);border-radius:16px;padding:16px 18px}
+.qpanel h2{font-family:Fredoka,sans-serif;font-size:19px;color:var(--main);margin:0 0 8px}
+.q{margin:14px 0 18px}
+.q .qt{font-weight:600;margin-bottom:8px}
+.g3 .q .qt{font-size:18px}.g4 .q .qt{font-size:16.5px}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff;border:2px solid var(--tint);border-radius:12px;padding:11px 14px;margin:7px 0;font-size:16px;color:var(--ink);min-height:48px}
+.g3 .opt{font-size:17px}
+.opt .l{flex:none;width:28px;height:28px;border-radius:50%;background:var(--tint);color:var(--main);font-weight:700;display:grid;place-items:center}
+.opt:hover{border-color:var(--accent)}
+.opt.sel{border-color:var(--main);background:var(--tint)}
+.opt.sel .l{background:var(--main);color:#fff}
+textarea{width:100%;min-height:110px;border:2px solid var(--tint);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:16px;color:var(--ink);resize:vertical;background:#fff}
+textarea:focus,input:focus{outline:3px solid var(--accent);outline-offset:1px}
+.count{font-size:12px;color:#777;text-align:right}
+.nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:3px solid var(--tint);display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 18px;z-index:6}
+.btn{border:none;border-radius:12px;padding:12px 22px;font-size:17px;font-weight:600;min-height:50px}
+.btn.primary{background:var(--main);color:#fff}
+.btn.ghost{background:var(--tint);color:var(--main)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.nav[hidden]{display:none}
+.need{font-size:14px;color:var(--warn);text-align:center;flex:1}
+.start{max-width:640px;margin:0 auto;text-align:center}
+.start h2{font-family:Fredoka,sans-serif;font-size:34px;color:var(--main);margin:8px 0 2px}
+.start .sub{color:var(--accent);font-weight:600;margin-bottom:14px}
+.field{text-align:left;margin:14px 0}
+.field label{display:block;font-weight:600;margin-bottom:6px}
+.field input{width:100%;font-size:18px;padding:12px;border:2px solid var(--tint);border-radius:12px;font-family:inherit}
+.how{text-align:left;background:var(--soft);border-radius:14px;padding:12px 16px;font-size:15px;margin:14px 0}
+.how li{margin:4px 0}
+.review li{margin:6px 0}
+.done{text-align:center;max-width:620px;margin:0 auto}
+.done h2{font-family:Fredoka,sans-serif;color:var(--main);font-size:32px;margin:8px 0}
+.score{font-family:Fredoka,sans-serif;font-size:54px;color:var(--ok);margin:6px 0}
+.err{color:#b00020;font-weight:600}
+.small{font-size:13px;color:#666}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dots span{width:11px;height:11px;border-radius:50%;background:rgba(255,255,255,.35)}
+.dots span.on{background:#fff}
+.dots span.doneq{background:var(--accent)}
+.teach{margin-top:26px;border-top:2px dashed var(--tint);padding-top:12px}
+.tlink{background:none;border:none;color:#8a96a3;font-size:13px;text-decoration:underline}
+.tbox{display:flex;gap:8px;justify-content:center;align-items:center;margin-top:8px;flex-wrap:wrap}
+.tbox input{font-size:20px;width:120px;padding:8px;border:2px solid var(--tint);border-radius:10px;text-align:center;letter-spacing:.2em;font-family:inherit}
+.report{text-align:left;max-width:900px;margin:0 auto}
+.report h2{font-family:Fredoka,sans-serif;color:var(--main);margin:4px 0}
+.sum{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}
+.sum div{background:var(--soft);border-radius:12px;padding:10px 14px;flex:1;min-width:130px}
+.sum b{display:block;font-family:Fredoka,sans-serif;font-size:28px;color:var(--main)}
+.ri{border:2px solid var(--tint);border-radius:12px;padding:10px 12px;margin:8px 0;font-size:15px}
+.ri.right{border-color:#9fd3ad;background:#f1faf3}.ri.wrong{border-color:#efb1a8;background:#fdf3f1}
+.ri .lab{font-size:12px;font-weight:700;color:var(--accent);text-transform:uppercase}
+.ri .ans{margin-top:4px}.ri .key{margin-top:4px;color:#555;font-size:14px}
+.ri .mark{font-weight:700}.ri.right .mark{color:var(--ok)}.ri.wrong .mark{color:#b00020}
+@media print{.nav,.top,.noprint{display:none!important}.page{box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="top"><h1 id="ttl"></h1><div class="dots" id="dots"></div><div class="who" id="who"></div></div>
+<div class="bar"><div id="prog" style="width:0"></div></div>
+<main class="wrap" id="app"></main>
+<nav class="nav" id="nav" hidden>
+  <button class="btn ghost" id="back">&#8592; Back</button>
+  <div class="need" id="need"></div>
+  <button class="btn primary" id="next">Next page &#8594;</button>
+</nav>
+<script>
+/* Standalone story reader: no sign-in and no internet connection to any server.
+   Answers stay on the student's device. After "Turn In" the student cannot change anything
+   and does not see a score. The teacher types the teacher code on the finished screen to see
+   the score and every answer. The answer key is locked with the teacher code. */
+var BOOK = {"grade": 4, "title": "The Odyssey Exhibit", "subtitle": "A Realistic Fiction Story", "theme": {"main": "#16406b", "accent": "#3d8fc6", "soft": "#eef4fa", "card": "#ffffff", "vocab": "#c2412d", "ink": "#1c2733", "tint": "#dce8f4"}, "pages": [{"skill": "Synthesize", "text": "Noor and Ethan's fourth-grade class had just finished reading about Ernest Shackleton and the ship Endurance. So when the city history museum opened a new exhibit called \"Odyssey on the Ice,\" their teacher, Mr. Patel, had an idea.\n\n\"You two will visit the exhibit before the rest of the class,\" he said. \"Interview the museum's curator, the person in charge of the exhibit, and report back to everyone next week.\"\n\nEthan pumped his fist. Noor just nodded. She loved learning about the expedition, but she was timid around adults she didn't know. The thought of asking a stranger questions made her stomach flip. She wrote three questions in her notebook anyway, just in case she found her courage.", "art": "<svg viewBox=\"0 0 400 220\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-hidden=\"true\"><rect width=\"400\" height=\"220\" fill=\"#cfe5f3\"/><rect width=\"400\" height=\"220\" fill=\"#cfe5f3\"/><rect y=\"180\" width=\"400\" height=\"40\" fill=\"#b9c2c9\"/><rect x=\"70\" y=\"70\" width=\"260\" height=\"110\" fill=\"#efe8da\"/><path d=\"M60 72 L200 26 L340 72 Z\" fill=\"#d8cbb0\"/><rect x=\"90\" y=\"82\" width=\"14\" height=\"94\" fill=\"#ffffff\"/><rect x=\"134\" y=\"82\" width=\"14\" height=\"94\" fill=\"#ffffff\"/><rect x=\"178\" y=\"82\" width=\"14\" height=\"94\" fill=\"#ffffff\"/><rect x=\"222\" y=\"82\" width=\"14\" height=\"94\" fill=\"#ffffff\"/><rect x=\"266\" y=\"82\" width=\"14\" height=\"94\" fill=\"#ffffff\"/><rect x=\"310\" y=\"82\" width=\"14\" height=\"94\" fill=\"#ffffff\"/><rect x=\"176\" y=\"130\" width=\"48\" height=\"50\" fill=\"#7a4e2d\"/><rect x=\"110\" y=\"44\" width=\"180\" height=\"20\" rx=\"4\" fill=\"#16406b\"/><text x=\"200\" y=\"58\" font-size=\"11\" fill=\"#ffffff\" text-anchor=\"middle\" font-family=\"Poppins, Arial\" font-weight=\"700\">ODYSSEY ON THE ICE</text><rect x=\"20\" y=\"150\" width=\"34\" height=\"30\" fill=\"#4f8a46\" rx=\"12\"/><rect x=\"346\" y=\"150\" width=\"34\" height=\"30\" fill=\"#4f8a46\" rx=\"12\"/></svg>", "qs": [{"id": "p1a", "type": "mc", "q": "What is the purpose of Noor and Ethan's visit to the museum?", "options": ["To buy souvenirs", "To interview the curator and report to their class", "To watch a movie", "To fix the exhibit"]}, {"id": "p1b", "type": "mc", "q": "Which detail shows that Noor is timid?", "options": ["Asking a stranger questions makes her stomach flip", "She reads about Shackleton", "She pumps her fist", "She visits the museum"]}, {"id": "p1c", "type": "fr", "q": "Write one thing you already know about the Endurance expedition and one thing you want to find out."}]}, {"skill": "Ask and Answer Questions", "text": "In the lobby, the curator, Ms. Lane, greeted them with a warm wave. Mr. Patel could tell that Noor was nervous, so he nudged Ethan to go first.\n\n\"How did you decide what to put in the exhibit?\" Ethan asked.\n\n\"Great question,\" said Ms. Lane. \"We devised the exhibit so that it follows the order of events. You walk through it like a timeline. First, you see the ship trapped in the ice. Then you see the lifeboats, and last, the rescue. We want visitors to feel the journey, not just read about it.\"\n\nNoor gripped her notebook. Her first question was right there on the page, but she didn't say a word.", "art": "<svg viewBox=\"0 0 400 220\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-hidden=\"true\"><rect width=\"400\" height=\"220\" fill=\"#e9eef3\"/><rect width=\"400\" height=\"220\" fill=\"#e9eef3\"/><rect y=\"180\" width=\"400\" height=\"40\" fill=\"#b9a68a\"/><rect x=\"40\" y=\"40\" width=\"320\" height=\"100\" rx=\"8\" fill=\"#ffffff\" stroke=\"#16406b\" stroke-width=\"3\"/><text x=\"200\" y=\"66\" font-size=\"13\" fill=\"#16406b\" text-anchor=\"middle\" font-family=\"Poppins, Arial\" font-weight=\"700\">YOUR PATH THROUGH THE EXHIBIT</text><circle cx=\"90\" cy=\"104\" r=\"12\" fill=\"#3d8fc6\"/><text x=\"90\" y=\"109\" font-size=\"12\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"Poppins, Arial\" font-weight=\"700\">1</text><circle cx=\"164\" cy=\"104\" r=\"12\" fill=\"#3d8fc6\"/><text x=\"164\" y=\"109\" font-size=\"12\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"Poppins, Arial\" font-weight=\"700\">2</text><circle cx=\"238\" cy=\"104\" r=\"12\" fill=\"#3d8fc6\"/><text x=\"238\" y=\"109\" font-size=\"12\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"Poppins, Arial\" font-weight=\"700\">3</text><circle cx=\"312\" cy=\"104\" r=\"12\" fill=\"#3d8fc6\"/><text x=\"312\" y=\"109\" font-size=\"12\" fill=\"#fff\" text-anchor=\"middle\" font-family=\"Poppins, Arial\" font-weight=\"700\">4</text><line x1=\"102\" y1=\"104\" x2=\"300\" y2=\"104\" stroke=\"#3d8fc6\" stroke-width=\"3\" stroke-dasharray=\"6 5\"/><text x=\"90\" y=\"132\" font-size=\"9\" fill=\"#1c2733\" text-anchor=\"middle\" font-family=\"Poppins, Arial\">Trapped</text><text x=\"164\" y=\"132\" font-size=\"9\" fill=\"#1c2733\" text-anchor=\"middle\" font-family=\"Poppins, Arial\">Lifeboat</text><text x=\"238\" y=\"132\" font-size=\"9\" fill=\"#1c2733\" text-anchor=\"middle\" font-family=\"Poppins, Arial\">Island</text><text x=\"312\" y=\"132\" font-size=\"9\" fill=\"#1c2733\" text-anchor=\"middle\" font-family=\"Poppins, Arial\">Rescue</text><rect x=\"150\" y=\"150\" width=\"100\" height=\"30\" rx=\"4\" fill=\"#7a5236\"/></svg>", "qs": [{"id": "p2a", "type": "mc", "q": "In this page, the word \"devised\" means...", "options": ["broke apart", "painted", "forgot about", "planned or figured out"]}, {"id": "p2b", "type": "mc", "q": "Why did Ms. Lane set up the exhibit like a timeline?", "options": ["To save money", "So visitors feel the journey in the order it happened", "So it would be quiet", "Because the rooms were small"]}, {"id": "p2c", "type": "fr", "q": "If you were Noor, what question would you ask Ms. Lane? Why would you ask it?"}]}, {"skill": "Main Ideas and Details", "text": "The first room was cold and dim. In the center sat a large model of Endurance, its wooden sides squeezed by jagged chunks of ice. Huge photographs covered the walls.\n\n\"These are prints of Frank Hurley's photographs,\" Ms. Lane explained. \"When the ship was crushed, each man could keep only two pounds of belongings. Hurley had to leave most of his glass picture plates behind, but he saved more than one hundred of his best images.\"\n\nEthan read a sign out loud. \"Trapped in the ice: January 18, 1915. Ship sank: November 21, 1915.\" He looked up. \"So they lived on the ice for months before they even got into the boats?\"\n\n\"Exactly,\" said Ms. Lane. \"Without Hurley's choice, we would have almost no pictures of their odyssey.\"", "art": "<svg viewBox=\"0 0 400 220\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-hidden=\"true\"><rect width=\"400\" height=\"220\" fill=\"#2c3e52\"/><rect width=\"400\" height=\"220\" fill=\"#2c3e52\"/><rect y=\"178\" width=\"400\" height=\"42\" fill=\"#3b4a5a\"/><rect x=\"20\" y=\"22\" width=\"80\" height=\"58\" fill=\"#d9d3c4\" stroke=\"#ffffff\" stroke-width=\"3\"/><rect x=\"25\" y=\"54\" width=\"70\" height=\"20\" fill=\"#b9b2a2\"/><rect x=\"116\" y=\"22\" width=\"80\" height=\"58\" fill=\"#d9d3c4\" stroke=\"#ffffff\" stroke-width=\"3\"/><rect x=\"121\" y=\"54\" width=\"70\" height=\"20\" fill=\"#b9b2a2\"/><rect x=\"212\" y=\"22\" width=\"80\" height=\"58\" fill=\"#d9d3c4\" stroke=\"#ffffff\" stroke-width=\"3\"/><rect x=\"217\" y=\"54\" width=\"70\" height=\"20\" fill=\"#b9b2a2\"/><rect x=\"308\" y=\"22\" width=\"80\" height=\"58\" fill=\"#d9d3c4\" stroke=\"#ffffff\" stroke-width=\"3\"/><rect x=\"313\" y=\"54\" width=\"70\" height=\"20\" fill=\"#b9b2a2\"/><path d=\"M60 178 L100 150 L150 165 L210 140 L270 162 L330 150 L350 178 Z\" fill=\"#e6f2f9\"/><g transform=\"translate(205.0 158.0) scale(0.70) rotate(-4)\"><path d=\"M-90 0 H90 L74 22 H-78 Z\" fill=\"#2b2b2b\"/><rect x=\"-86\" y=\"-4\" width=\"172\" height=\"5\" fill=\"#d9c08a\"/><rect x=\"-50\" y=\"-16\" width=\"38\" height=\"12\" fill=\"#e8d7b0\"/><rect x=\"-5\" y=\"-30\" width=\"10\" height=\"26\" fill=\"#d4b483\"/><line x1=\"-56\" y1=\"0\" x2=\"-56\" y2=\"-110\" stroke=\"#5a3a22\" stroke-width=\"3\"/><line x1=\"10\" y1=\"0\" x2=\"10\" y2=\"-125\" stroke=\"#5a3a22\" stroke-width=\"3\"/><line x1=\"62\" y1=\"0\" x2=\"62\" y2=\"-100\" stroke=\"#5a3a22\" stroke-width=\"3\"/><line x1=\"-82\" y1=\"-60\" x2=\"-30\" y2=\"-60\" stroke=\"#5a3a22\" stroke-width=\"2\"/><line x1=\"-16\" y1=\"-70\" x2=\"36\" y2=\"-70\" stroke=\"#5a3a22\" stroke-width=\"2\"/><line x1=\"-16\" y1=\"-98\" x2=\"36\" y2=\"-98\" stroke=\"#5a3a22\" stroke-width=\"2\"/><line x1=\"42\" y1=\"-56\" x2=\"82\" y2=\"-56\" stroke=\"#5a3a22\" stroke-width=\"2\"/><line x1=\"90\" y1=\"0\" x2=\"120\" y2=\"-16\" stroke=\"#5a3a22\" stroke-width=\"2.5\"/></g><rect x=\"124.8\" y=\"190.0\" width=\"150.4\" height=\"20\" rx=\"4\" fill=\"#ffffff\" stroke=\"#16406b\"/><text x=\"200.0\" y=\"204.0\" font-size=\"10\" font-family=\"Poppins, Arial\" font-weight=\"700\" fill=\"#16406b\" text-anchor=\"middle\">Trapped: Jan 18, 1915</text></svg>", "qs": [{"id": "p3a", "type": "mc", "q": "What is the main idea of this page?", "options": ["Museums are cold", "Ethan likes reading signs", "Glass is heavy", "Hurley's saved photographs show us what happened on the ice"]}, {"id": "p3b", "type": "mc", "q": "Why could Hurley save only some of his photographs?", "options": ["Each man could keep only two pounds of belongings", "They were wet", "He lost his camera", "Ms. Lane took them"]}, {"id": "p3c", "type": "fr", "q": "What would be different today if Hurley had not saved his photographs? Explain."}]}, {"skill": "Cause and Effect", "text": "The next room held a full-size copy of the James Caird, the lifeboat that six men sailed for about 800 miles to get help. Ms. Lane invited the students to climb inside.\n\nNoor squeezed onto the narrow bench. Her knees bumped Ethan's backpack. \"Six grown men lived in here for sixteen days?\" she whispered.\n\n\"In freezing spray, with waves taller than this building,\" said Ms. Lane. \"Ice kept building up on the boat until it was heavy enough to sink. The men had to crawl out and chip it off. It was strenuous work, and one slip could send a man into the sea.\"\n\nNoor imagined the distress the men must have felt, cold and soaked, with nothing but ocean in every direction. For the first time, the story felt real.", "art": "<svg viewBox=\"0 0 400 220\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-hidden=\"true\"><rect width=\"400\" height=\"220\" fill=\"#dfe8ef\"/><rect width=\"400\" height=\"220\" fill=\"#dfe8ef\"/><rect y=\"180\" width=\"400\" height=\"40\" fill=\"#b9a68a\"/><path d=\"M0 150 q40 -30 80 0 t80 0 t80 0 t80 0 t80 0 V220 H0Z\" fill=\"#2a5d88\" opacity=\"0.35\"/><g transform=\"translate(200.0 150.0) scale(1.60)\"><path d=\"M-60 0 H62 L48 26 H-46 Z\" fill=\"#a8743f\"/><rect x=\"-60\" y=\"-3\" width=\"122\" height=\"5\" fill=\"#6b4423\"/><rect x=\"-50\" y=\"-11\" width=\"100\" height=\"9\" fill=\"#d8cfb8\"/><line x1=\"0\" y1=\"-3\" x2=\"0\" y2=\"-70\" stroke=\"#5a3a22\" stroke-width=\"3\"/><path d=\"M3 -66 V-12 L40 -14 Z\" fill=\"#efe6d2\"/></g><rect x=\"70.0\" y=\"22.0\" width=\"260.0\" height=\"20\" rx=\"4\" fill=\"#ffffff\" stroke=\"#16406b\"/><text x=\"200.0\" y=\"36.0\" font-size=\"10\" font-family=\"Poppins, Arial\" font-weight=\"700\" fill=\"#16406b\" text-anchor=\"middle\">James Caird: about 800 miles in 16 days</text></svg>", "qs": [{"id": "p4a", "type": "mc", "q": "Why did the men have to chip ice off the boat?", "options": ["Ms. Lane told them to", "To get drinking water", "The ice made the boat heavy enough to sink", "To make it look nice"]}, {"id": "p4b", "type": "mc", "q": "Which word from the page means \"taking great effort\"?", "options": ["strenuous", "narrow", "freezing", "distress"]}, {"id": "p4c", "type": "fr", "q": "How did sitting inside the lifeboat change the way Noor understood the story? Use details."}]}, {"skill": "Ask and Answer Questions", "text": "In the third room, two upside-down boats rested on a low stone wall. \"This is how the 22 men on Elephant Island lived while they waited,\" Ms. Lane said. \"Every morning, their leader, Frank Wild, called out, 'Lash up and stow, boys! The Boss may come today!'\"\n\nNoor's heart pounded. She took a deep breath and raised her hand. \"Were they scared they wouldn't survive?\"\n\nMs. Lane smiled. \"That's one of the best questions anyone has asked me. Yes. They knew they were mortals, not superheroes. Their diaries show worry. But they kept busy with jobs and routines, and they kept hoping. That hope helped them survive.\"\n\nNoor looked down at her notebook. One question asked. Two to go.", "art": "<svg viewBox=\"0 0 400 220\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-hidden=\"true\"><rect width=\"400\" height=\"220\" fill=\"#c9d3dc\"/><rect width=\"400\" height=\"220\" fill=\"#c9d3dc\"/><path d=\"M0 140 L70 60 L140 140 Z M120 140 L210 50 L300 140 Z M260 140 L340 80 L400 130 V140 Z\" fill=\"#7d8a96\"/><rect y=\"140\" width=\"400\" height=\"80\" fill=\"#f1f4f6\"/><rect x=\"110\" y=\"150\" width=\"20\" height=\"14\" rx=\"4\" fill=\"#8a8a8a\"/><rect x=\"128\" y=\"152\" width=\"20\" height=\"14\" rx=\"4\" fill=\"#8a8a8a\"/><rect x=\"146\" y=\"150\" width=\"20\" height=\"14\" rx=\"4\" fill=\"#8a8a8a\"/><rect x=\"164\" y=\"152\" width=\"20\" height=\"14\" rx=\"4\" fill=\"#8a8a8a\"/><rect x=\"182\" y=\"150\" width=\"20\" height=\"14\" rx=\"4\" fill=\"#8a8a8a\"/><rect x=\"200\" y=\"152\" width=\"20\" height=\"14\" rx=\"4\" fill=\"#8a8a8a\"/><rect x=\"218\" y=\"150\" width=\"20\" height=\"14\" rx=\"4\" fill=\"#8a8a8a\"/><rect x=\"236\" y=\"152\" width=\"20\" height=\"14\" rx=\"4\" fill=\"#8a8a8a\"/><rect x=\"254\" y=\"150\" width=\"20\" height=\"14\" rx=\"4\" fill=\"#8a8a8a\"/><rect x=\"272\" y=\"152\" width=\"20\" height=\"14\" rx=\"4\" fill=\"#8a8a8a\"/><path d=\"M110 150 L200 150 L188 120 L122 120 Z\" fill=\"#a8743f\"/><path d=\"M200 150 L290 150 L278 120 L212 120 Z\" fill=\"#a8743f\"/><rect x=\"105.0\" y=\"22.0\" width=\"190.0\" height=\"20\" rx=\"4\" fill=\"#ffffff\" stroke=\"#16406b\"/><text x=\"200.0\" y=\"36.0\" font-size=\"10\" font-family=\"Poppins, Arial\" font-weight=\"700\" fill=\"#16406b\" text-anchor=\"middle\">The Boss may come today!</text></svg>", "qs": [{"id": "p5a", "type": "mc", "q": "How does Noor change on this page?", "options": ["She leaves the museum", "She gets angry", "She finds the courage to ask a question", "She stops taking notes"]}, {"id": "p5b", "type": "mc", "q": "According to Ms. Lane, what helped the men on Elephant Island survive?", "options": ["Swimming", "Sleeping all day", "Staying busy and keeping hope", "Building a ship"]}, {"id": "p5c", "type": "fr", "q": "Why do you think Frank Wild said \"The Boss may come today!\" every morning? What effect did it have?"}]}, {"skill": "Main Ideas and Details", "text": "The last room had a row of touch screens. Ethan tapped one, and a map game appeared. \"You are Shackleton,\" it said. \"Choose where to sail for help.\"\n\nEthan picked the Falkland Islands. \"They're closer,\" he explained. But on the screen, the little boat drifted backward, pushed by wind and currents, and a message flashed: \"Your boat cannot sail against the wind. Try again.\"\n\n\"That's why Shackleton chose South Georgia,\" Noor said. \"It was farther, but the wind pushed in that direction.\"\n\nMs. Lane pointed to a photo on the wall. \"And here is the very end of the story. In 2022, underwater robots found Endurance almost 10,000 feet below the Weddell Sea. You can still read her name.\"", "art": "<svg viewBox=\"0 0 400 220\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-hidden=\"true\"><rect width=\"400\" height=\"220\" fill=\"#1c2733\"/><rect width=\"400\" height=\"220\" fill=\"#1c2733\"/><rect x=\"40\" y=\"20\" width=\"320\" height=\"170\" rx=\"10\" fill=\"#2a5d88\" stroke=\"#9aa3ab\" stroke-width=\"6\"/><circle cx=\"110\" cy=\"140\" r=\"10\" fill=\"#e6f2f9\"/><text x=\"110\" y=\"166\" font-size=\"10\" fill=\"#ffffff\" text-anchor=\"middle\" font-family=\"Poppins, Arial\">Elephant Island</text><circle cx=\"300\" cy=\"70\" r=\"14\" fill=\"#e6f2f9\"/><text x=\"300\" y=\"100\" font-size=\"10\" fill=\"#ffffff\" text-anchor=\"middle\" font-family=\"Poppins, Arial\">South Georgia</text><path d=\"M120 135 Q 210 70 285 72\" stroke=\"#ffd25a\" stroke-width=\"3\" fill=\"none\" stroke-dasharray=\"6 5\"/><path d=\"M70 50 h50 m-10 -7 l10 7 l-10 7\" stroke=\"#ffffff\" stroke-width=\"3\" fill=\"none\"/><text x=\"95\" y=\"40\" font-size=\"10\" fill=\"#ffffff\" text-anchor=\"middle\" font-family=\"Poppins, Arial\">WIND</text><text x=\"200\" y=\"182\" font-size=\"9\" fill=\"#cfe5f3\" text-anchor=\"middle\" font-family=\"Poppins, Arial\">Map game (not to scale)</text><rect x=\"180\" y=\"190\" width=\"40\" height=\"22\" fill=\"#5a6470\"/></svg>", "qs": [{"id": "p6a", "type": "mc", "q": "Why did Ethan's boat drift backward in the game?", "options": ["The boat could not sail against the wind and currents", "The screen was broken", "He ran out of time", "He tapped the wrong button"]}, {"id": "p6b", "type": "mc", "q": "When was the wreck of Endurance found?", "options": ["1922", "2022", "1916", "1915"]}, {"id": "p6c", "type": "fr", "q": "Explain why Shackleton chose to sail to South Georgia instead of a closer place."}]}, {"skill": "Synthesize", "text": "Back in the lobby, Ms. Lane asked, \"So, what will you report to your class?\"\n\n\"I think they survived because it was their destiny,\" Ethan said. \"They were just meant to make it.\"\n\nNoor shook her head. \"I don't think it was only destiny. They made good choices. Shackleton changed his plans when they didn't work, and Frank Wild kept everyone hopeful.\"\n\nMs. Lane laughed. \"Sounds like you two will have a great discussion with your class.\"\n\nOn the bus ride back, Ethan nudged Noor. \"You asked all three of your questions.\" Noor blinked. He was right. She didn't feel timid at all.", "art": "<svg viewBox=\"0 0 400 220\" xmlns=\"http://www.w3.org/2000/svg\" role=\"img\" aria-hidden=\"true\"><rect width=\"400\" height=\"220\" fill=\"#e9eef3\"/><rect width=\"400\" height=\"220\" fill=\"#e9eef3\"/><rect y=\"180\" width=\"400\" height=\"40\" fill=\"#b9a68a\"/><rect x=\"60\" y=\"30\" width=\"280\" height=\"130\" rx=\"10\" fill=\"#0d2a44\"/><path d=\"M90 150 L230 150 L250 90 L90 100 Z\" fill=\"#4a3a2c\"/><rect x=\"120\" y=\"112\" width=\"100\" height=\"16\" fill=\"#3a2c20\"/><text x=\"170\" y=\"124\" font-size=\"11\" fill=\"#e8d48a\" text-anchor=\"middle\" font-family=\"Poppins, Arial\" font-weight=\"700\">ENDURANCE</text><rect x=\"270\" y=\"60\" width=\"50\" height=\"18\" rx=\"7\" fill=\"#f2b134\"/><rect x=\"75.0\" y=\"172.0\" width=\"250.0\" height=\"20\" rx=\"4\" fill=\"#ffffff\" stroke=\"#16406b\"/><text x=\"200.0\" y=\"186.0\" font-size=\"10\" font-family=\"Poppins, Arial\" font-weight=\"700\" fill=\"#16406b\" text-anchor=\"middle\">Found in 2022, almost 10,000 feet deep</text></svg>", "qs": [{"id": "p7a", "type": "mc", "q": "What do Noor and Ethan disagree about?", "options": ["Who should talk first", "Why the men survived", "What time the bus leaves", "Which room was best"]}, {"id": "p7b", "type": "mc", "q": "How is Noor different at the end of the story than at the beginning?", "options": ["She is more timid", "She is bored", "She is angry at Ethan", "She is confident and asked all her questions"]}, {"id": "p7c", "type": "fr", "q": "Do you agree more with Noor or with Ethan about why the men survived? Use a detail from the story."}]}], "final": [{"id": "f1", "type": "mc", "q": "What is the main idea of the whole story?", "options": ["Visiting the exhibit helps Noor learn about the expedition and build her confidence", "Museums have touch screens", "Ethan likes games", "Lifeboats are small"]}, {"id": "f2", "type": "mc", "q": "In what order did the students see the exhibit rooms?", "options": ["Map game, boat hut, lifeboat, ship model", "Ship model, lifeboat, boat hut, map game", "Boat hut, ship model, map game, lifeboat", "Lifeboat, ship model, map game, boat hut"]}, {"id": "f3", "type": "mc", "q": "Why did Ms. Lane design the exhibit to follow the order of events?", "options": ["Because it was the cheapest way", "So it would end early", "So visitors could feel the journey as it happened", "Because Mr. Patel asked"]}, {"id": "f4", "type": "mc", "q": "What caused Noor to feel more confident?", "options": ["She played the map game", "She left early", "Ethan answered for her", "She asked her first question and Ms. Lane praised it"]}, {"id": "f5", "type": "fr", "q": "Name two things Noor and Ethan learned about the Endurance expedition at the museum."}, {"id": "f6", "type": "fr", "q": "Which character changed the most? Explain using two details from the story."}, {"id": "f7", "type": "fr", "q": "Write one question you still have about the Endurance expedition."}], "vocab": {"timid": "Someone who is timid is shy and may lack courage or confidence.", "strenuous": "If an activity is strenuous, it takes great effort or a lot of energy.", "devised": "If you devised a plan, you figured out a way to achieve that plan.", "distress": "If you are in distress, you are very worried and upset.", "odyssey": "An odyssey is a long journey that is exciting and eventful.", "destiny": "A person's destiny is what will eventually happen in his or her life.", "mortal": "A mortal is a person who lives and dies."}};
+var LOCK = '/Q+kuKVI2HliWpN8vzmaW5jskKxM//9iDk6c1R9sd1c3Q0JyCLFNYiOas/7vgVNVy9gY/h7nRMTPCVj5oY7WbRMJJEWVpuemDaXf9DhNOz6V2MY9ZkXHzAazFXo9u7oNeU2KvBpiA6xzLm/9UZyB1fX7E/G/egD6cE0PiEuxjb3ErGwXaLfiHWz7LanXWlI80n+3vYnNkDh8VM/xFumRRn9F29+QhUohacrrzcjhjIxG1Lgg3G10BtVXoiYTgrWJfvsW1G8skyl79p1mswUuieNbXifCLoT/jznCYGccy1FqRhgwp9TCBRkj/2nIxjaZIoN7C6APU5ACEhh4yZuJ4hjJq7DP+Dq/c+j7pA4Zo/NVk5WA+sKwpCsT42sj+CNmBeZOqH7fJA65aHjE+SpqHnQS8r37/Vq+9kMQk70tA7bozJLDpdDwUsNN9JHB2w0MJbv7UzBYse52wTO/TZv4CK/30dDdXhfF4396R/pV0gYIf/xiZlbYoLc9u7RC2bmGVSZq+6Cbhjt1Pp83vdA/LRfD+YyrqYE/O7R414k4oRSrEmhSFjGU/jO5ayDWAmOkWRFtEPyjIb3EkMX7SxwrQ0PDyXTSd1EURur+2Qdh0wcn696MqbQ82avxw6Cn3VOszzy2WB+yaQuXxYfzbQ4DKTLrHZksrbd+g2/dxdam+W4cqR7JHSp9emKYD+XFTildWLu7Q6aFqcRNa67T+xdWWevQwqxiaJC0UpBZVKTmT8b7Pyw2FfGcgl5aiIXEev8j+r/KWCvOiPkNPthcekaJll7rXOXxQwQ6nm+r0qj0YZewmb1QUZnHS9QCOnBBArcDKEdZI+B+5ywKBmNCH7EKlkI7rj2yQ4bdIR1woFNfzuq0T25an2Z6seIJWpw49O5yR+BwxLl0I5p5wc3oYbYztiMjZJw3x6QqyQgFykyBsarXgEaIEzNS+zHAxvGoQZzKfOK9NBK2THNAp+AeapTnGv93H+oRTfVzCCOyK5iTvTx9Wuo25zXkm+4pcnFPc2Ls1PSxKL4AyZx4UhDPEBlxsbEakMc2DBN4eTFqdBkOKfId/H0aWU6kgQhWlk2eeD/Zvj+5fB1HO6A22m1oB/r1SePyPtm2CCV9/AHCfmrA64DInM24OYoCNLtRr+TSJz84O1J+PVvUtZQepTWeHDEf8EUbAXtmucPmlSvdaclyQeBXRb2yqidLQcdWe6kzFOGMcGgNTy7B6ltR1ZdJY8Fw3S2ZvwRnt6zRxXFZXaGIlQwnnOaUR/Yj0K8NTW7TwPVqDcf8b3J8lDqeYavbeslEr+rofmofPZCJ2hXTst6/jA/PYEGUgChm48bdlaUX2HzejlVXfP9ufZEtKKitVLvmDBE77zEV6sOAnMb9j9nFngv6H2NaLtJoje36O43QhfFjClPh8WMepF8VfXr+lg/R1wC5myK5KfwzJ2d6uWVEK0NBQnIPKyCrMCH2e4Sk2awYobBua/19ziHnigS2xyX6l8OcmgGarjX3p70+Ub6CFca2eHj4fR8dzLAzH5mdu+1UxGpPlJI/Xv70RKhXJUEVx9GiYYpE2gfFYolesn/46pkwY+CIp5ybQ0mae+oOaWVOuXmufSmkm3bfiucRy8vZ4QQ/JaqA9x4kwbNl4KSmpBumLh+8FTmaqfhkwyfAVr4FqY2tduWf5qngYkgESxJDZbKUu5pu/i7wjIhRIulS1WQDqKWMqmG/JSgxfaYd+UPOpULvOMioanYRSwh1ETWKq9c+P50vEfNR7IIESFmwuLIwnSIq0RBjaue54KrQvom/k60lAb2zF2poCDzOm0j2tg5g6r7xyPWvMEZf0g0WbUoo6OzaMU+tr5bGlU58eZeMcvq6l3hsVJAVOhVBtPHOnlkCDtBT84p8TWKKblZ6tLrFW9h4sz+Xwp+00hTXlLocwJ3ytMsgFjHLrIQrKU/QVtiF';
+var MIN_WORDS = BOOK.grade === 3 ? 4 : 8;
+var KEY = 'storybook-' + BOOK.grade + '-' + BOOK.title;
+function fresh(){ return {step: 0, name: '', klass: '', answers: {}, submitted: false, started: null, finished: null}; }
+var state = load() || fresh();
+var app = document.getElementById('app');
+var N = BOOK.pages.length;           // story pages
+// steps: 0 = start, 1..N = pages, N+1 = final questions, N+2 = review/turn in, N+3 = done
+var TEACHER = null;                  // unlocked answer key while the teacher view is open
+var RESET_ARMED = false;
+
+document.body.className = 'g' + BOOK.grade;
+var th = BOOK.theme, rs = document.documentElement.style;
+['main','accent','soft','card','vocab','ink','tint'].forEach(function(k){ rs.setProperty('--' + k, th[k]); });
+document.title = BOOK.title + ' - Grade ' + BOOK.grade;
+document.getElementById('ttl').textContent = BOOK.title + '  •  Grade ' + BOOK.grade;
+
+function load(){ try { return JSON.parse(localStorage.getItem(KEY)); } catch(e){ return null; } }
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){} }
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function words(s){ return (s || '').trim().split(/\s+/).filter(Boolean).length; }
+
+// ----- answer key lock -----
+function fnv(str){ var b = unescape(encodeURIComponent(str)), h = 0x811c9dc5; for (var i = 0; i < b.length; i++) { h ^= b.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; }
+function stream(seed){ var a = seed >>> 0; return function(){ a = (a + 0x6D2B79F5) >>> 0; var t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) & 255; }; }
+function unlock(code){
+  try {
+    var raw = atob(LOCK), next = stream(fnv(String(code).trim() + '|' + BOOK.title)), out = '';
+    for (var i = 0; i < raw.length; i++) out += String.fromCharCode(raw.charCodeAt(i) ^ next());
+    var k = JSON.parse(decodeURIComponent(escape(out)));
+    return k && k.ok === 'storykey' ? k : null;
+  } catch(e){ return null; }
+}
+
+function markVocab(text){
+  var h = esc(text);
+  Object.keys(BOOK.vocab).forEach(function(w){
+    var re = new RegExp('\\b(' + w + '(?:s|ed)?)\\b', 'gi');
+    h = h.replace(re, '<button type="button" class="vw" data-w="' + w + '">$1</button>');
+  });
+  return h.split('\n\n').map(function(p){ return '<p>' + p + '</p>'; }).join('');
+}
+
+function qHTML(q, n){
+  var a = state.answers[q.id], h = '<div class="q" data-id="' + q.id + '"><div class="qt">' + n + '. ' + esc(q.q) + '</div>';
+  if (q.type === 'mc') {
+    q.options.forEach(function(o, i){
+      h += '<button type="button" class="opt' + (a === i ? ' sel' : '') + '" data-q="' + q.id + '" data-i="' + i + '"><span class="l">' + 'ABCD'[i] + '</span><span>' + esc(o) + '</span></button>';
+    });
+  } else {
+    h += '<textarea data-q="' + q.id + '" placeholder="Type your answer in complete sentences...">' + esc(a || '') + '</textarea>' +
+         '<div class="count" data-c="' + q.id + '"></div>';
+  }
+  return h + '</div>';
+}
+
+function answered(q){
+  var a = state.answers[q.id];
+  return q.type === 'mc' ? typeof a === 'number' : words(a) >= MIN_WORDS;
+}
+function qsFor(step){ return step >= 1 && step <= N ? BOOK.pages[step - 1].qs : step === N + 1 ? BOOK.final : []; }
+function allQs(){ var out = []; BOOK.pages.forEach(function(p){ out = out.concat(p.qs); }); return out.concat(BOOK.final); }
+function labels(){
+  var out = [];
+  BOOK.pages.forEach(function(p, i){ p.qs.forEach(function(q, k){ out.push({q: q, label: 'Page ' + (i + 1) + ', question ' + (k + 1)}); }); });
+  BOOK.final.forEach(function(q, k){ out.push({q: q, label: 'Reread and Respond, question ' + (k + 1)}); });
+  return out;
+}
+
+function render(dir){
+  if (state.submitted) state.step = N + 3;
+  var s = state.step, nav = document.getElementById('nav');
+  document.getElementById('who').textContent = state.name ? state.name : '';
+  var total = allQs().length, done = allQs().filter(answered).length;
+  document.getElementById('prog').style.width = (s === 0 ? 0 : Math.min(100, done / total * 100)) + '%';
+  var dots = '';
+  for (var i = 1; i <= N + 1; i++) dots += '<span class="' + (i === s ? 'on' : (qsFor(i).every(answered) ? 'doneq' : '')) + '"></span>';
+  document.getElementById('dots').innerHTML = s === 0 || s === N + 3 ? '' : dots;
+  var cls = 'page' + (dir ? (dir > 0 ? ' flip-next' : ' flip-prev') : '');
+  if (s === 0) { nav.hidden = true; app.innerHTML = startHTML(); bindStart(); return; }
+  if (s === N + 3) { nav.hidden = true; app.innerHTML = '<div class="book"><div class="' + cls + '">' + (TEACHER ? reportHTML() : doneHTML()) + '</div></div>'; bindDone(); window.scrollTo(0, 0); return; }
+  nav.hidden = false;
+  var body;
+  if (s <= N) {
+    var p = BOOK.pages[s - 1], n = 0;
+    body = '<div class="grid"><section><span class="chip">' + esc(p.skill) + '</span><span class="pnum">Page ' + s + ' of ' + N + '</span>' +
+      '<button class="listen" id="listen" type="button">&#128264; Listen</button>' +
+      '<div class="art">' + p.art + '</div><div class="story">' + markVocab(p.text) + '</div></section>' +
+      '<section class="qpanel"><h2>Read &amp; Respond</h2><div class="small">Answer while you read. Tap a red word to see what it means.</div>' +
+      p.qs.map(function(q){ return qHTML(q, ++n); }).join('') + '</section></div>';
+  } else if (s === N + 1) {
+    var m = 0;
+    body = '<div class="qpanel" style="max-width:820px;margin:0 auto"><h2>Reread and Respond</h2>' +
+      '<div class="small">You finished the story! Answer these questions about the WHOLE story. You can go back and reread any page.</div>' +
+      BOOK.final.map(function(q){ return qHTML(q, ++m); }).join('') + '</div>';
+  } else {
+    body = reviewHTML();
+  }
+  app.innerHTML = '<div class="book"><div class="' + cls + '">' + body + '</div></div>';
+  bindPage();
+  updateNav();
+  window.scrollTo(0, 0);
+}
+
+function startHTML(){
+  var p = BOOK.pages[0];
+  return '<div class="page start"><div class="art">' + p.art + '</div><h2>' + esc(BOOK.title) + '</h2>' +
+    '<div class="sub">' + esc(BOOK.subtitle) + '  •  Grade ' + BOOK.grade + '</div>' +
+    (state.name ? '<p>Welcome back, <b>' + esc(state.name) + '</b>!</p>' :
+    '<div class="field"><label for="nm">Your first and last name</label><input id="nm" autocomplete="off" maxlength="60"></div>' +
+    '<div class="field"><label for="kl">Your class or teacher (optional)</label><input id="kl" autocomplete="off" maxlength="40"></div>') +
+    '<ul class="how"><li>Read each page, then answer the questions next to it.</li><li>You must answer every question before you can turn the page.</li>' +
+    '<li>Tap a <b style="color:var(--vocab)">red word</b> to see what it means.</li><li>At the end, answer a few questions about the whole story and press <b>Turn In</b>.</li>' +
+    '<li>You only get <b>one try</b>. After you turn it in, you cannot change your answers.</li></ul>' +
+    '<div class="err" id="serr"></div><button class="btn primary" id="go">' + (state.started ? 'Keep reading' : 'Start reading') + ' &#8594;</button></div>';
+}
+function bindStart(){
+  var go = document.getElementById('go'), err = document.getElementById('serr');
+  go.onclick = function(){
+    if (!state.name) {
+      var nm = document.getElementById('nm').value.trim().replace(/\s+/g, ' ');
+      if (nm.split(' ').length < 2 || nm.length < 4) { err.textContent = 'Please type your first and last name.'; return; }
+      state.name = nm; state.klass = document.getElementById('kl').value.trim();
+    }
+    state.started = state.started || new Date().toISOString();
+    if (!state.step || state.step < 1) state.step = 1;
+    save(); render(1);
+  };
+}
+
+function reviewHTML(){
+  var missing = labels().filter(function(x){ return !answered(x.q); }).map(function(x){ return x.label; });
+  var h = '<div class="start"><h2>Ready to turn in?</h2><p>Name: <b>' + esc(state.name) + '</b>' + (state.klass ? '  •  Class: <b>' + esc(state.klass) + '</b>' : '') + '</p>';
+  if (missing.length) h += '<div class="how"><b>Finish these first:</b><ul class="review">' + missing.map(function(m){ return '<li>' + m + '</li>'; }).join('') + '</ul></div>';
+  else h += '<p>You answered every question. You can press <b>Back</b> to check your answers.</p><p><b>Remember:</b> you only get one try. After you press <b>Turn In</b>, you cannot change your answers.</p>';
+  return h + '</div>';
+}
+
+function fmt(d){ try { return new Date(d).toLocaleString([], {month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}); } catch(e){ return ''; } }
+
+function doneHTML(){
+  return '<div class="done"><h2>Turned in! Great job, ' + esc(state.name.split(' ')[0]) + '!</h2>' +
+    '<p>Your answers are saved on this device. <b>Bring this device to school</b> and show this screen to your teacher.</p>' +
+    '<p class="small">Turned in ' + esc(fmt(state.finished)) + '. You only get one try, so this story is finished.</p>' +
+    '<div class="teach noprint"><button class="tlink" id="tShow" type="button">Teacher</button>' +
+    '<div class="tbox" id="tBox" hidden><input id="tCode" type="password" inputmode="numeric" autocomplete="off" maxlength="8" aria-label="Teacher code">' +
+    '<button class="btn primary" id="tGo" type="button">Show score</button></div><div class="err" id="tErr"></div></div></div>';
+}
+
+function grade(){
+  var right = 0, total = 0;
+  allQs().forEach(function(q){ if (q.type === 'mc') { total++; if (state.answers[q.id] === TEACHER.mc[q.id]) right++; } });
+  return {right: right, total: total};
+}
+function reportHTML(){
+  var g = grade(), pct = g.total ? Math.round(g.right / g.total * 100) : 0;
+  var mins = state.started && state.finished ? Math.max(1, Math.round((new Date(state.finished) - new Date(state.started)) / 60000)) : '';
+  var h = '<div class="report"><h2>' + esc(state.name) + '</h2><div class="small">' + (state.klass ? esc(state.klass) + '  •  ' : '') +
+    esc(BOOK.title) + ', Grade ' + BOOK.grade + '  •  Turned in ' + esc(fmt(state.finished)) + (mins ? '  •  ' + mins + ' min' : '') + '</div>' +
+    '<div class="sum"><div>Multiple choice<b>' + g.right + ' / ' + g.total + '</b></div><div>Percent<b>' + pct + '%</b></div>' +
+    '<div>Written answers<b>' + allQs().filter(function(q){ return q.type === 'fr'; }).length + '</b>to read below</div></div>';
+  labels().forEach(function(x){
+    var q = x.q, a = state.answers[q.id];
+    if (q.type === 'mc') {
+      var ok = a === TEACHER.mc[q.id];
+      h += '<div class="ri ' + (ok ? 'right' : 'wrong') + '"><div class="lab">' + x.label + '</div><div>' + esc(q.q) + '</div>' +
+        '<div class="ans"><span class="mark">' + (ok ? '&#10004; ' : '&#10008; ') + '</span>' + (typeof a === 'number' ? esc('ABCD'[a] + '. ' + q.options[a]) : '(no answer)') + '</div>' +
+        (ok ? '' : '<div class="key">Correct answer: ' + esc('ABCD'[TEACHER.mc[q.id]] + '. ' + q.options[TEACHER.mc[q.id]]) + '</div>') + '</div>';
+    } else {
+      h += '<div class="ri"><div class="lab">' + x.label + ' (written)</div><div>' + esc(q.q) + '</div>' +
+        '<div class="ans"><b>Student:</b> ' + esc(a || '(no answer)') + '</div>' +
+        '<div class="key"><b>Sample answer:</b> ' + esc(TEACHER.sample[q.id] || '') + '</div></div>';
+    }
+  });
+  return h + '<div class="tbox noprint" style="justify-content:flex-start;margin-top:16px">' +
+    '<button class="btn primary" id="tHide" type="button">Hide score</button>' +
+    '<button class="btn ghost" id="tReset" type="button">' + (RESET_ARMED ? 'Press again to erase and let the student retake' : 'Let this student retake') + '</button></div></div>';
+}
+function bindDone(){
+  var show = document.getElementById('tShow');
+  if (show) {
+    var box = document.getElementById('tBox'), inp = document.getElementById('tCode'), err = document.getElementById('tErr');
+    show.onclick = function(){ box.hidden = !box.hidden; if (!box.hidden) inp.focus(); };
+    var tryIt = function(){
+      var k = unlock(inp.value);
+      if (!k) { err.textContent = 'That code is not right.'; inp.value = ''; return; }
+      TEACHER = k; RESET_ARMED = false; render();
+    };
+    document.getElementById('tGo').onclick = tryIt;
+    inp.onkeydown = function(e){ if (e.key === 'Enter') tryIt(); };
+  }
+  var hide = document.getElementById('tHide');
+  if (hide) hide.onclick = function(){ TEACHER = null; RESET_ARMED = false; render(); };
+  var reset = document.getElementById('tReset');
+  if (reset) reset.onclick = function(){
+    if (!RESET_ARMED) { RESET_ARMED = true; render(); return; }
+    TEACHER = null; RESET_ARMED = false; state = fresh(); save(); render();
+  };
+}
+
+function bindPage(){
+  Array.prototype.forEach.call(app.querySelectorAll('.opt'), function(b){
+    b.onclick = function(){
+      var id = b.getAttribute('data-q');
+      state.answers[id] = +b.getAttribute('data-i'); save();
+      Array.prototype.forEach.call(app.querySelectorAll('.opt[data-q="' + id + '"]'), function(o){ o.classList.toggle('sel', o === b); });
+      updateNav(); refreshTop();
+    };
+  });
+  Array.prototype.forEach.call(app.querySelectorAll('textarea'), function(t){
+    var id = t.getAttribute('data-q');
+    var c = app.querySelector('[data-c="' + id + '"]');
+    var upd = function(){ var n = words(t.value); c.textContent = n < MIN_WORDS ? 'Write at least ' + MIN_WORDS + ' words (' + n + ' so far)' : n + ' words ✔'; };
+    t.oninput = function(){ state.answers[id] = t.value; save(); upd(); updateNav(); refreshTop(); };
+    upd();
+  });
+  Array.prototype.forEach.call(app.querySelectorAll('.vw'), function(b){
+    b.onclick = function(e){ e.stopPropagation(); showTip(b); };
+  });
+  var l = document.getElementById('listen');
+  if (l) l.onclick = function(){
+    if (!('speechSynthesis' in window)) return;
+    if (speechSynthesis.speaking) { speechSynthesis.cancel(); l.innerHTML = '&#128264; Listen'; return; }
+    var u = new SpeechSynthesisUtterance(BOOK.pages[state.step - 1].text.replace(/\n\n/g, ' '));
+    u.rate = BOOK.grade === 3 ? 0.85 : 0.95; u.onend = function(){ l.innerHTML = '&#128264; Listen'; };
+    speechSynthesis.speak(u); l.innerHTML = '&#9632; Stop';
+  };
+}
+function refreshTop(){
+  var total = allQs().length, done = allQs().filter(answered).length;
+  document.getElementById('prog').style.width = (done / total * 100) + '%';
+}
+var tip;
+function showTip(b){
+  hideTip();
+  var w = b.getAttribute('data-w');
+  tip = document.createElement('div'); tip.className = 'tip';
+  tip.innerHTML = '<b>' + esc(w) + '</b>: ' + esc(BOOK.vocab[w]);
+  document.body.appendChild(tip);
+  var r = b.getBoundingClientRect();
+  tip.style.left = Math.max(8, Math.min(window.innerWidth - tip.offsetWidth - 8, r.left)) + 'px';
+  tip.style.top = (r.bottom + 8 + tip.offsetHeight > window.innerHeight ? r.top - tip.offsetHeight - 8 : r.bottom + 8) + 'px';
+}
+function hideTip(){ if (tip) { tip.remove(); tip = null; } }
+document.addEventListener('click', hideTip);
+window.addEventListener('scroll', hideTip);
+
+function updateNav(){
+  var s = state.step, next = document.getElementById('next'), need = document.getElementById('need');
+  document.getElementById('back').disabled = s <= 1;
+  if (s <= N + 1) {
+    var ok = qsFor(s).every(answered);
+    next.disabled = !ok;
+    next.innerHTML = s < N ? 'Next page &#8594;' : (s === N ? 'Final questions &#8594;' : 'Review &#8594;');
+    need.textContent = ok ? '' : 'Answer all the questions on this page to keep going.';
+  } else {
+    next.disabled = !allQs().every(answered);
+    next.innerHTML = 'Turn In &#10004;';
+    need.textContent = '';
+  }
+}
+
+document.getElementById('back').onclick = function(){ if (state.step > 1 && !state.submitted) { state.step--; save(); render(-1); } };
+document.getElementById('next').onclick = function(){
+  var s = state.step;
+  if (state.submitted) return;
+  if (s <= N + 1) { if (!qsFor(s).every(answered)) return; state.step++; save(); render(1); return; }
+  if (!allQs().every(answered)) return;
+  state.submitted = true; state.finished = new Date().toISOString(); state.step = N + 3; save(); render(1);
+};
+document.addEventListener('keydown', function(e){
+  if (/TEXTAREA|INPUT/.test(document.activeElement.tagName)) return;
+  if (e.key === 'ArrowRight' && !document.getElementById('next').disabled && state.step > 0 && state.step <= N + 1) document.getElementById('next').click();
+  if (e.key === 'ArrowLeft' && state.step > 1 && state.step <= N + 2) document.getElementById('back').click();
+});
+// If the story is open in two tabs, keep them in step so a turned-in story stays locked.
+window.addEventListener('storage', function(e){ if (e.key === KEY) { state = load() || fresh(); render(); } });
+
+render();
+</script>
+</body>
+</html>
