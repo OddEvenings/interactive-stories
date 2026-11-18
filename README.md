@@ -4,4 +4,4 @@ Flip-book reading stories for Grade 3 and Grade 4. Students read each page and a
 
 After **Turn In**, the student sees no score. The teacher opens the story on the student's device, clicks **Teacher**, and types the teacher code to see the score and every answer.
 
-- Week 14: `week14/grade3.html`, `week14/grade4.html`
+- Week 14: stories `week14/grade3.html`, `week14/grade4.html`; word practice `week14/words3.html`, `week14/words4.html`
